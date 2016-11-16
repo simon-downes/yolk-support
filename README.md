@@ -1,8 +1,6 @@
-Want to work for Gamer Network? [We are hiring!](http://www.gamesindustry.biz/jobs/gamer-network)
-
 # Yolk Support
 
-[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/gamernetwork/yolk-support/badges/quality-score.png?b=develop)](https://scrutinizer-ci.com/g/gamernetwork/yolk-support/?branch=develop)
+[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/simon-downes/yolk-support/badges/quality-score.png?b=develop)](https://scrutinizer-ci.com/g/simon-downes/yolk-support/?branch=develop)
 
 Provides various supporting elements to the Yolk framework, such as:
 * Collections
@@ -13,11 +11,11 @@ Provides various supporting elements to the Yolk framework, such as:
 
 ## Requirements
 
-This library requires only PHP 5.4 or later and the Yolk Contracts package (`gamernetwork/yolk-contracts`).
+This library requires only PHP 5.4 or later and the Yolk Contracts package (`simon-downes/yolk-contracts`).
 
 ## Installation
 
-It is installable and autoloadable via Composer as `gamernetwork/yolk-support`.
+It is installable and autoloadable via Composer as `simon-downes/yolk-support`.
 
 Alternatively, download a release or clone this repository, and add the `\yolk\support` namespace to an autoloader.
 
