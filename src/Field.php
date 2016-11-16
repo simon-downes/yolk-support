@@ -3,7 +3,7 @@
  * This file is part of Yolk - Gamer Network's PHP Framework.
  *
  * Copyright (c) 2015 Gamer Network Ltd.
- * 
+ *
  * Distributed under the MIT License, a copy of which is available in the
  * LICENSE file that was bundled with this package, or online at:
  * https://github.com/gamernetwork/yolk-support
@@ -100,12 +100,30 @@ class Field {
 			Type::IP,
 			Type::EMAIL,
 			Type::URL,
-			Type::JSON,
 		]);
 	}
 
+	public function isJSON() {
+		return $this->type == Type::JSON;
+	}
+
 	public function isObject() {
-		return $this->type == Type::OBJECT;
+		return in_array($this->type, [
+			Type::OBJECT,
+			Type::ENTITY,
+		]);
+	}
+
+	public function isEntity() {
+		return $this->type == Type::ENTITY;
+	}
+
+	public function isCollection() {
+		return $this->type == Type::COLLECTION;
+	}
+
+	public function isUnique() {
+		return !empty($this->rules['unique']);
 	}
 
 	public function cast( $v ) {
@@ -115,21 +133,22 @@ class Field {
 			case Type::TIMESTAMP:
 			case Type::YEAR:
 				return (int) $v;
-			
+
 			case Type::FLOAT:
 				return (float) $v;
-			
+
 			case Type::BOOLEAN:
 				return (bool) $v;
-			
+
 			case Type::DATETIME:
 			case Type::DATE:
 				return preg_match('/0000-00-00/', $v) ? '' : $v;
-			
+
 			case Type::JSON:
-				if( !is_array($v) && is_array($arr = json_decode($v, true)) ) {
+				if( !$v )
+					$v = [];
+				elseif( !is_array($v) && is_array($arr = json_decode($v, true)) )
 					$v = $arr;
-				}
 				return $v;
 
 			default:
@@ -140,9 +159,9 @@ class Field {
 
 	public function validate( $v ) {
 
-		if( $this->required && Validator::isEmpty($v) )
+		if( $this->required && Validator::isEmpty($v, $this->type) )
 			return [$v, Error::REQUIRED];
-		
+
 		elseif( !$this->nullable && ($v === null) )
 			return [$v, Error::NULL];
 
@@ -160,85 +179,47 @@ class Field {
 	 * @return mixed
 	 */
 	protected function getDefault() {
-		if( $this->default instanceof \Closure )
-			return $this->default();
+		$default = $this->default;
+		if( $default instanceof \Closure )
+			return $default();
 		else
-			return $this->cast($this->default);
+			return $this->cast($default);
 	}
 
 	protected function validateType( $v, $type ) {
 
+		// Innocent until proven guilty
 		$error = Error::NONE;
+		$clean = $v;
 
-		switch( $type ) {
+		$validators = [
+			Type::TEXT     => 'validateText',
+			Type::INTEGER  => 'validateInteger',
+			Type::FLOAT    => 'validateFloat',
+			Type::BOOLEAN  => 'validateBoolean',
+			Type::DATETIME => 'validateDateTime',
+			Type::DATE     => 'validateDate',
+			Type::TIME     => 'validateTime',
+			Type::YEAR     => 'validateYear',
+			Type::EMAIL    => 'validateEmail',
+			Type::URL      => 'validateURL',
+			Type::IP       => 'validateIP',
+			Type::JSON     => 'validateJSON',
+		];
 
-			case Type::TEXT:
-				$clean = trim((string) $v);
-				break;
-
-			case Type::INTEGER:
-				$clean = Validator::validateInteger($v);
-				break;
-
-			case Type::FLOAT:
-				$clean = Validator::validateFloat($v);
-				break;
-
-			case Type::BOOLEAN:
-				$clean = Validator::validateBoolean($v);
-				break;
-
-			case Type::DATETIME:
-				$clean = Validator::validateDateTime($v);
-				break;
-
-			case Type::DATE:
-				$clean = Validator::validateDate($v);
-				break;
-
-			case Type::TIME:
-				$clean = Validator::validateTime($v);
-				break;
-
-			case Type::YEAR:
-				$clean = Validator::validateYear($v);
-				break;
-
-			case Type::EMAIL:
-				$clean = Validator::validateEmail($v);
-				break;
-
-			case Type::URL:
-				$clean = Validator::validateURL($v);
-				break;
-
-			case Type::IP:
-				$clean = Validator::validateIP($v);
-				break;
-
-			case Type::JSON:
-				$clean = Validator::validateJSON($v);
-				break;
-
-			case Type::OBJECT:
-				$clean = Validator::validateObject($v, $this->rules['class']);
-				break;
-
-			case Type::BINARY:
-				$clean = (string) $v;
-				break;
-
-			default:
-				// Don't handle other types as they should be validated elsewhere
-				$clean = $v;
-				break;
-
+		if( isset($validators[$type]) ) {
+			$method = $validators[$type];
+			$clean = Validator::$method($v);
+		}
+		elseif( in_array($type, [Type::OBJECT, Type::ENTITY]) ){
+			$clean = Validator::validateObject($v, $this->rules['class'], $this->nullable);
+		}
+		elseif( $type == Type::BINARY ) {
+			$clean = (string) $v;
 		}
 
 		// boolean fields will be null on error
-		if( $type == Type::BOOLEAN )
-			$error = ($clean === null) ? Error::BOOLEAN : Error::NONE;
-		elseif( $clean === false )
+		if( ($clean === false) || (($type == Type::BOOLEAN) && ($clean === null)) )
 			$error = Error::getTypeError($type);
 
 		return [$clean, $error];
@@ -305,7 +286,7 @@ class Field {
 
 	}
 
-	protected function processRules( array $rules ) {
+	protected function processRules( array $rules, $container = 'array' ) {
 
 		$this->required = $rules['required'];
 		$this->nullable = $rules['nullable'];
@@ -325,10 +306,29 @@ class Field {
 			if( empty($rules['class']) )
 				throw new \LogicException("Missing class name for item: {$this->name}");
 
-			// replace default with closure to generate a new object
+			// object fields are nullable by default
+			$this->nullable = true;
+			$this->default  = null;
+
+		}
+		elseif( $this->isCollection() ) {
+
+			// collection fields must specify a class
+			if( empty($rules['class']) )
+				throw new \LogicException("Missing item class for collection: {$this->name}");
+
+			$rules['container'] = empty($rules['container']) ? $container : $rules['container'];
+
+			// replace default with closure to generate a new collection
 			$this->default = function() use ($rules) {
-				$object = $rules['class'];
-				return new $object();
+
+				$container = $rules['container'];
+
+				if( $container == 'array' )
+					return [];
+				else
+					return new $container($rules['class']);
+
 			};
 
 		}

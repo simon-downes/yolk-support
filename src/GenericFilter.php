@@ -11,6 +11,7 @@
 
 namespace yolk\support;
 
+use yolk\contracts\database\Query;
 use yolk\contracts\support\Filter;
 use yolk\contracts\support\Arrayable;
 
@@ -227,6 +228,59 @@ class GenericFilter implements Filter, Arrayable {
 	public function limit( $limit )	 {
 		$this->limit = max(1, (int) $limit);
 		return $this;
+	}
+
+	/**
+	 * Apply the filter to a database Query
+	 * @param  Query  $query
+	 * @param  array  $columns a map of field names to database column names
+	 * @return Query
+	 */
+	public function toQuery( Query $query, array $columns = [], $alias = '' ) {
+
+		foreach( $this->criteria as $column => $criteria ) {
+
+			if( !$column = $this->getColumnName($columns, $column, $alias) )
+				continue;
+
+			foreach( $criteria as $operator => $value ) {
+				$query->where($column, $operator, $value);
+			}
+
+		}
+
+		foreach( $this->getOrder() as $column => $ascending ) {
+			$column = $this->getColumnName($columns, $column, $alias);
+			if( !$column )
+				continue;
+			$query->orderBy($column, $ascending);
+		}
+
+		if( $this->offset )
+			$query->offset($this->offset);
+
+		if( $this->limit )
+			$query->limit($this->limit);
+
+		return $query;
+
+	}
+
+	protected function getColumnName( $columns, $column, $alias ) {
+
+		$column = isset($columns[$column]) ? $columns[$column] : $column;
+
+		if( !$column )
+			return '';
+
+		elseif( strpos($column, '.') )
+			return $column;
+
+		elseif( $alias )
+			return "{$alias}.{$column}";
+
+		return $column;
+
 	}
 
 	/**

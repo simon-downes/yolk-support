@@ -11,6 +11,7 @@
 
 namespace yolk\support;
 
+use yolk\contracts\orm\Entity;
 use yolk\contracts\support\Type;
 
 class Validator {
@@ -51,6 +52,12 @@ class Validator {
 
 		switch( $type ) {
 
+			case Type::COLLECTION:
+				return count(array_filter($v)) == 0;
+
+			case Type::ENTITY:
+				return is_object($v) && !(bool) $v->id;
+
 			case Type::DATETIME:
 			case Type::DATE:
 			case Type::TIME:
@@ -61,10 +68,21 @@ class Validator {
 				return preg_match('/0.0.0.0/', $v) || (is_numeric($v) && !(int) $v);
 
 			default:
-				return false;
 
 		}
 
+		return false;
+
+	}
+
+	/**
+	 * Validates a string has the correct encoding and trims whitespace.
+	 * @param  string $v
+	 * @param  string $encoding
+	 * @return string|boolean Returns the trimmed string or false if incorrect encoding
+	 */
+	public static function validateText( $v, $encoding = 'UTF-8' ) {
+		return mb_check_encoding($v, $encoding) ? trim($v) : false;
 	}
 
 	/**
@@ -174,8 +192,16 @@ class Validator {
 
 	}
 
-	public static function validateObject( $v, $class ) {
-		return $v instanceof $class ? $v : false;
+	public static function validateObject( $v, $class, $nullable = false ) {
+
+		if( $v instanceof $class )
+			return $v;
+
+		elseif( $nullable && ($v === null) )
+			return $v;
+
+		return false;
+
 	}
 
 }
