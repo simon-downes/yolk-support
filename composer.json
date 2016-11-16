@@ -1,12 +1,12 @@
 {
-    "name":        "gamernetwork/yolk-support",
+    "name":        "simon-downes/yolk-support",
     "description": "Gamer Network's PHP framework core",
     "keywords":    ["framework", "eurogamer", "gamer network"],
     "license":     "MIT",
     "authors": [
         {
             "name":         "Simon Downes",
-            "email":        "simon.downes@gamer-network.net",
+            "email":        "simon@simondownes.co.uk",
             "homepage":     "http://simondownes.co.uk",
             "role":         "Developer"
         }
@@ -14,7 +14,7 @@
     "minimum-stability": "dev",
     "require": {
         "php": ">=5.4.0",
-        "gamernetwork/yolk-contracts": "dev-develop"
+        "simon-downes/yolk-contracts": "dev-develop"
     },
     "require-dev": {
         "phpunit/phpunit": "4.*",
