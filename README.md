@@ -1,6 +1,6 @@
 # Yolk Support
 
-[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/simon-downes/yolk-support/badges/quality-score.png?b=develop)](https://scrutinizer-ci.com/g/simon-downes/yolk-support/?branch=develop)
+[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/simon-downes/yolk-support/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/simon-downes/yolk-support/?branch=master)
 
 Provides various supporting elements to the Yolk framework, such as:
 * Collections
