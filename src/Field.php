@@ -205,6 +205,7 @@ class Field {
 			Type::URL      => 'validateURL',
 			Type::IP       => 'validateIP',
 			Type::JSON     => 'validateJSON',
+			Type::SET      => 'validateSet',
 		];
 
 		if( isset($validators[$type]) ) {
@@ -279,8 +280,14 @@ class Field {
 
 	protected function validateValues( $v ) {
 
-		if( isset($this->rules['values']) && !in_array($v, $this->rules['values']) )
+		if( $this->type == Type::SET ) {
+			if( array_diff($v, $this->rules['values']) ) {
+				return Error::VALUE;
+			}
+		}
+		elseif( isset($this->rules['values']) && !in_array($v, $this->rules['values']) ) {
 			return Error::VALUE;
+		}
 
 		return Error::NONE;
 

@@ -204,6 +204,12 @@ class Validator {
 
 	}
 
+	public static function validateSet( $v ) {
+		if( !is_array($v) )
+			$v = explode(',', $v);
+		return $v;
+	}
+
 }
 
 // EOF
